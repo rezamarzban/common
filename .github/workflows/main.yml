@@ -1,4 +1,4 @@
-name: extract a zip file
+name: extract zip files
 
 on:
   push:
@@ -9,37 +9,43 @@ on:
 jobs:
   unzip:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract zip
+      - name: Extract all zip files
         run: |
           set -e
 
-          rm -rf uploads/extracted temp
+          shopt -s nullglob
 
-          zipfile=$(find uploads -maxdepth 1 -name '*.zip' | head -n 1)
-          filename=$(basename "$zipfile" .zip)
+          for zipfile in uploads/*.zip; do
+            echo "Processing $zipfile"
 
-          unzip "$zipfile" -d temp
-          rm "$zipfile"
+            dirname=$(basename "$zipfile" .zip)
+            target="uploads/$dirname"
 
-          if [ -d "temp/$filename/out" ]; then
-            mv "temp/$filename/out/"* .
-          elif [ -d "temp/out" ]; then
-            mv temp/out/* .
-          else
-            mv temp/* .
-          fi
+            # Remove existing destination directory
+            rm -rf "$target"
 
-          rm -rf temp
+            # Recreate destination directory
+            mkdir -p "$target"
 
+            # Extract archive
+            unzip -oq "$zipfile" -d "$target"
+          done
+
+      - name: Commit changes
+        run: |
           git config --local user.email "github-actions@users.noreply.github.com"
           git config --local user.name "github-actions"
 
-          git add .
-          git commit -m "unzip" || echo "No changes to commit"
-          git push origin main
+          git add uploads
+
+          git diff --cached --quiet || \
+          git commit -m "Extract zip files"
+
+          git push
