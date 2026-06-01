@@ -1,53 +1,45 @@
 name: extract a zip file
 
 on:
-
   push:
-
     paths:
-
-    - 'uploads/**.zip'
-
+      - 'uploads/**/*.zip'
   workflow_dispatch:
 
-    jobs:
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
-      unzip:
+    steps:
+      - uses: actions/checkout@v4
 
-        runs-on: ubuntu-latest
+      - name: Extract zip
+        run: |
+          set -e
 
-        permissions:
+          rm -rf uploads/extracted temp
 
-          contents: write
+          zipfile=$(find uploads -maxdepth 1 -name '*.zip' | head -n 1)
+          filename=$(basename "$zipfile" .zip)
 
-        steps:
+          unzip "$zipfile" -d temp
+          rm "$zipfile"
 
-          - uses: actions/checkout@v4
+          if [ -d "temp/$filename/out" ]; then
+            mv "temp/$filename/out/"* .
+          elif [ -d "temp/out" ]; then
+            mv temp/out/* .
+          else
+            mv temp/* .
+          fi
 
-          - name:
+          rm -rf temp
 
-            run: |
+          git config --local user.email "github-actions@users.noreply.github.com"
+          git config --local user.name "github-actions"
 
-              rm -r uploads/extracted
-
-              filename=$(basename -s .zip *.zip)
-
-              unzip *.zip
-
-              rm *.zip
-
-              mv $filename temp
-
-              mv temp/out/* .
-
-              rm -r temp
-
-              git config --local user.email "github-actions@users.noreply.github.com"
-
-              git config --local user.name "github-actions"
-
-              git add .
-
-              git commit -m "unzip"
-
-              git push origin main
+          git add .
+          git commit -m "unzip" || echo "No changes to commit"
+          git push origin main
