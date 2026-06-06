@@ -1,1 +1,0 @@
-This static linked library compiled binary file will be executed in any debian based Linux distribution.
