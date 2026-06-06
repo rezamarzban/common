@@ -1,0 +1,6 @@
+
+registry.docker.ir
+mirror-docker.runflare.com
+docker-mirror.liara.ir
+mirror2.chabokan.net
+docker.arvancloud.ir
