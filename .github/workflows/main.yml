@@ -19,7 +19,6 @@ jobs:
       - name: Extract all zip files
         run: |
           set -e
-
           shopt -s nullglob
 
           for zipfile in uploads/*.zip; do
@@ -28,14 +27,13 @@ jobs:
             dirname=$(basename "$zipfile" .zip)
             target="uploads/$dirname"
 
-            # Remove existing destination directory
-            rm -rf "$target"
-
-            # Recreate destination directory
             mkdir -p "$target"
 
-            # Extract archive
+            # Extract and overwrite existing files if needed
             unzip -oq "$zipfile" -d "$target"
+
+            # Remove ZIP after successful extraction
+            rm -f "$zipfile"
           done
 
       - name: Commit changes
@@ -45,7 +43,6 @@ jobs:
 
           git add uploads
 
-          git diff --cached --quiet || \
-          git commit -m "Extract zip files"
+          git diff --cached --quiet || git commit -m "Extract zip files"
 
           git push
